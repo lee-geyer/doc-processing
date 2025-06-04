@@ -6,6 +6,10 @@ from sqlalchemy.orm import Session
 
 from src.config.settings import settings
 from src.models.database import SessionLocal, FileSyncState, Document, VectorSyncOperation
+from src.core.document_parser import DocumentParser, DocumentParsingError
+from src.core.text_cleaner import TextCleaner
+from src.utils.context_utils import ContextExtractor
+from src.utils.file_utils import get_file_info, calculate_file_hash
 from src.utils.logging import get_logger
 
 logger = get_logger(__name__)
@@ -19,6 +23,11 @@ class SyncManager:
     def __init__(self, max_workers: Optional[int] = None):
         self.max_workers = max_workers or settings.max_concurrent_files
         self.batch_size = settings.batch_processing_size
+        
+        # Initialize processing components
+        self.document_parser = DocumentParser()
+        self.text_cleaner = TextCleaner()
+        self.context_extractor = ContextExtractor()
     
     def process_pending_files(self, limit: Optional[int] = None) -> Dict[str, int]:
         """
@@ -112,15 +121,74 @@ class SyncManager:
             
             logger.info(f"Processing file: {file_state.file_path}")
             
-            # TODO: Implement actual processing steps
-            # 1. Parse document
-            # 2. Clean text
-            # 3. Create chunks
-            # 4. Generate embeddings
-            # 5. Store in vector database
+            # Step 1: Parse document
+            parsed_doc = self.document_parser.parse_document(file_state.file_path)
             
-            # For now, simulate processing
-            time.sleep(0.1)  # Simulate work
+            if not parsed_doc.parsing_success:
+                raise Exception(f"Document parsing failed: {parsed_doc.parsing_error_message}")
+            
+            # Step 2: Clean text
+            cleaning_result = self.text_cleaner.clean_text(
+                parsed_doc.raw_text or "",
+                document_id=str(file_id)
+            )
+            
+            # Validate cleaning didn't remove too much content
+            cleaning_validation = self.text_cleaner.validate_cleaning(
+                parsed_doc.raw_text or "",
+                cleaning_result['cleaned_text']
+            )
+            
+            if not cleaning_validation['is_valid']:
+                logger.warning(f"Text cleaning validation failed: {cleaning_validation['reason']}")
+            
+            # Step 3: Extract context
+            context = self.context_extractor.extract_context(file_state.file_path)
+            context_metadata = self.context_extractor.create_context_metadata(context)
+            
+            # Step 4: Create or update document record
+            existing_doc = db.query(Document).filter_by(file_path=file_state.file_path).first()
+            
+            if existing_doc:
+                # Update existing document
+                existing_doc.file_hash = file_state.file_hash
+                existing_doc.file_size_bytes = file_state.file_size_bytes
+                existing_doc.parsing_method = parsed_doc.parsing_method
+                existing_doc.parsing_success = parsed_doc.parsing_success
+                existing_doc.markdown_content = parsed_doc.markdown_content
+                existing_doc.cleaned_content = cleaning_result['cleaned_text']
+                existing_doc.word_count = parsed_doc.word_count
+                existing_doc.page_count = parsed_doc.page_count
+                existing_doc.document_metadata = parsed_doc.document_metadata
+                existing_doc.context_hierarchy = context_metadata
+                existing_doc.processing_duration_ms = parsed_doc.parsing_duration_ms
+                existing_doc.updated_at = datetime.utcnow()
+                
+                document = existing_doc
+            else:
+                # Create new document record
+                document = Document(
+                    file_path=file_state.file_path,
+                    document_index=context.document_index,
+                    file_hash=file_state.file_hash,
+                    original_filename=context.file_name,
+                    file_type=parsed_doc.file_type,
+                    file_size_bytes=file_state.file_size_bytes,
+                    parsing_method=parsed_doc.parsing_method,
+                    parsing_success=parsed_doc.parsing_success,
+                    markdown_content=parsed_doc.markdown_content,
+                    cleaned_content=cleaning_result['cleaned_text'],
+                    word_count=parsed_doc.word_count,
+                    page_count=parsed_doc.page_count,
+                    document_metadata=parsed_doc.document_metadata,
+                    context_hierarchy=context_metadata,
+                    processing_duration_ms=parsed_doc.parsing_duration_ms
+                )
+                db.add(document)
+            
+            # TODO: Step 5: Create chunks (will implement in Phase 3)
+            # TODO: Step 6: Generate embeddings (will implement in Phase 4)
+            # TODO: Step 7: Store in vector database (will implement in Phase 5)
             
             # Update sync state
             file_state.sync_status = 'synced'

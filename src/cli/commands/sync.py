@@ -6,6 +6,7 @@ from rich import box
 from pathlib import Path
 
 from src.core.file_monitor import FileMonitor
+from src.core.sync_manager import SyncManager
 from src.models.database import SessionLocal, FileSyncState
 from src.utils.logging import get_logger
 
@@ -60,33 +61,47 @@ def scan(
 def process(
     batch_size: int = typer.Option(10, "--batch-size", "-b", help="Number of files to process in batch"),
 ):
-    """Process pending files."""
-    db = SessionLocal()
+    """Process pending files with document parsing and text cleaning."""
     try:
-        # Get pending files
-        pending_files = db.query(FileSyncState).filter_by(sync_status='pending').limit(batch_size).all()
+        sync_manager = SyncManager()
         
-        if not pending_files:
-            console.print("[dim]No pending files to process[/dim]")
-            return
+        with Progress(
+            SpinnerColumn(),
+            TextColumn("[progress.description]{task.description}"),
+            console=console,
+        ) as progress:
+            task = progress.add_task("Processing pending files...", total=None)
+            
+            stats = sync_manager.process_pending_files(limit=batch_size)
+            
+            progress.update(task, completed=True)
         
-        console.print(f"[cyan]Processing {len(pending_files)} pending files...[/cyan]")
+        # Display results
+        table = Table(title="Processing Results", box=box.ROUNDED)
+        table.add_column("Metric", style="cyan")
+        table.add_column("Count", justify="right", style="green")
         
-        # TODO: Implement actual processing logic
-        # For now, just mark as processed
-        for file_state in pending_files:
-            console.print(f"[dim]Processing: {Path(file_state.file_path).name}[/dim]")
-            file_state.sync_status = 'synced'
+        table.add_row("Processed", str(stats['processed']))
+        table.add_row("Succeeded", str(stats['succeeded']))
+        table.add_row("Failed", str(stats['failed']))
+        table.add_row("Skipped", str(stats['skipped']))
         
-        db.commit()
-        console.print(f"\n[green]✓[/green] Processed {len(pending_files)} files")
+        if stats['processed'] > 0:
+            success_rate = stats['succeeded'] / stats['processed']
+            table.add_row("Success Rate", f"{success_rate:.1%}")
+        
+        console.print(table)
+        
+        if stats['succeeded'] > 0:
+            console.print(f"\n[green]✓[/green] Successfully processed {stats['succeeded']} files")
+        
+        if stats['failed'] > 0:
+            console.print(f"[yellow]⚠[/yellow] {stats['failed']} files failed processing")
         
     except Exception as e:
-        db.rollback()
         console.print(f"[red]Error processing files: {e}[/red]")
+        logger.error(f"Error in batch processing: {e}", exc_info=True)
         raise typer.Exit(1)
-    finally:
-        db.close()
 
 
 @app.command()
