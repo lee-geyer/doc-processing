@@ -5,7 +5,7 @@ CLI entry point for the Document Processing system.
 import typer
 from rich.console import Console
 
-from src.cli.commands import monitor, sync, process
+from src.cli.commands import monitor, sync, process, chunking
 from src.utils.logging import setup_logging
 
 # Create the main CLI app
@@ -19,6 +19,7 @@ app = typer.Typer(
 app.add_typer(monitor.app, name="monitor", help="File monitoring commands")
 app.add_typer(sync.app, name="sync", help="File synchronization commands")
 app.add_typer(process.app, name="process", help="Document processing commands")
+app.add_typer(chunking.app, name="chunking", help="Document chunking commands")
 
 # Create console for output
 console = Console()

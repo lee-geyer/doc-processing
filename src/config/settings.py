@@ -57,6 +57,8 @@ class Settings(BaseSettings):
         default=5,
         description="Maximum number of files to process concurrently"
     )
+    
+    # Chunking Configuration
     chunk_size: int = Field(
         default=1000,
         description="Default chunk size in tokens"
@@ -65,6 +67,49 @@ class Settings(BaseSettings):
         default=200,
         description="Default chunk overlap in tokens"
     )
+    min_chunk_size: int = Field(
+        default=100,
+        description="Minimum chunk size in tokens"
+    )
+    max_chunk_size: int = Field(
+        default=2000,
+        description="Maximum chunk size in tokens"
+    )
+    respect_sentence_boundaries: bool = Field(
+        default=True,
+        description="Avoid splitting sentences when chunking"
+    )
+    respect_paragraph_boundaries: bool = Field(
+        default=True,
+        description="Prefer to break chunks at paragraph boundaries"
+    )
+    preserve_table_structure: bool = Field(
+        default=True,
+        description="Keep tables intact in single chunks when possible"
+    )
+    include_surrounding_context: bool = Field(
+        default=True,
+        description="Include context from adjacent chunks"
+    )
+    surrounding_context_tokens: int = Field(
+        default=50,
+        description="Number of tokens of surrounding context to include"
+    )
+    
+    # Metadata Configuration
+    extract_section_hierarchy: bool = Field(
+        default=True,
+        description="Extract section and subsection titles for chunks"
+    )
+    include_page_numbers: bool = Field(
+        default=True,
+        description="Track page numbers for each chunk"
+    )
+    generate_chunk_summaries: bool = Field(
+        default=False,
+        description="Generate AI summaries for each chunk"
+    )
+    
     default_embedding_model: str = Field(
         default="sentence_transformers",
         description="Default embedding provider"

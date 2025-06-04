@@ -5,9 +5,10 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 from sqlalchemy.orm import Session
 
 from src.config.settings import settings
-from src.models.database import SessionLocal, FileSyncState, Document, VectorSyncOperation
+from src.models.database import SessionLocal, FileSyncState, Document, DocumentChunk, VectorSyncOperation
 from src.core.document_parser import DocumentParser, DocumentParsingError
 from src.core.text_cleaner import TextCleaner
+from src.core.chunking import DocumentChunker
 from src.utils.context_utils import ContextExtractor
 from src.utils.file_utils import get_file_info, calculate_file_hash
 from src.utils.logging import get_logger
@@ -27,6 +28,7 @@ class SyncManager:
         # Initialize processing components
         self.document_parser = DocumentParser()
         self.text_cleaner = TextCleaner()
+        self.document_chunker = DocumentChunker()
         self.context_extractor = ContextExtractor()
     
     def process_pending_files(self, limit: Optional[int] = None) -> Dict[str, int]:
@@ -186,7 +188,45 @@ class SyncManager:
                 )
                 db.add(document)
             
-            # TODO: Step 5: Create chunks (will implement in Phase 3)
+            # Step 5: Create chunks
+            chunking_result = self.document_chunker.chunk_document(
+                text=cleaning_result['cleaned_text'],
+                markdown=parsed_doc.markdown_content or "",
+                document_context=context
+            )
+            
+            # Remove existing chunks if updating
+            if existing_doc:
+                db.query(DocumentChunk).filter_by(document_id=existing_doc.id).delete()
+            
+            # Commit document first to get ID
+            db.commit()
+            db.refresh(document)
+            
+            # Create chunk records
+            chunk_records = []
+            for chunk in chunking_result.chunks:
+                chunk_record = DocumentChunk(
+                    document_id=document.id,
+                    chunk_index=chunk.index,
+                    chunk_text=chunk.text,
+                    chunk_markdown=chunk.markdown,
+                    chunk_tokens=chunk.token_count,
+                    chunk_hash=chunk.hash,
+                    page_numbers=chunk.page_numbers,
+                    section_title=chunk.section_title,
+                    subsection_title=chunk.subsection_title,
+                    context_metadata=chunk.context_metadata,
+                    surrounding_context=chunk.surrounding_context,
+                    document_position=chunk.document_position
+                )
+                chunk_records.append(chunk_record)
+                db.add(chunk_record)
+            
+            # Update document with chunk statistics
+            document.total_chunks = len(chunk_records)
+            document.total_tokens = chunking_result.total_tokens
+            
             # TODO: Step 6: Generate embeddings (will implement in Phase 4)
             # TODO: Step 7: Store in vector database (will implement in Phase 5)
             
