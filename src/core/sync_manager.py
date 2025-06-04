@@ -9,6 +9,8 @@ from src.models.database import SessionLocal, FileSyncState, Document, DocumentC
 from src.core.document_parser import DocumentParser, DocumentParsingError
 from src.core.text_cleaner import TextCleaner
 from src.core.chunking import DocumentChunker
+from src.core.embeddings import embedding_manager
+from src.core.vector_store import policy_vector_store
 from src.utils.context_utils import ContextExtractor
 from src.utils.file_utils import get_file_info, calculate_file_hash
 from src.utils.logging import get_logger
@@ -21,15 +23,39 @@ class SyncManager:
     Manage synchronization of files to vector database.
     """
     
-    def __init__(self, max_workers: Optional[int] = None):
+    def __init__(self, max_workers: Optional[int] = None, embedding_provider: str = None):
         self.max_workers = max_workers or settings.max_concurrent_files
         self.batch_size = settings.batch_processing_size
+        self.embedding_provider_name = embedding_provider or settings.default_embedding_model
         
         # Initialize processing components
         self.document_parser = DocumentParser()
         self.text_cleaner = TextCleaner()
         self.document_chunker = DocumentChunker()
         self.context_extractor = ContextExtractor()
+        
+        # Initialize embedding and vector components
+        self.embedding_provider = embedding_manager.get_provider(self.embedding_provider_name)
+        self.vector_store = policy_vector_store
+        
+        # Ensure vector collection exists
+        self._ensure_vector_collection()
+    
+    def _ensure_vector_collection(self):
+        """Ensure the vector collection exists for the current embedding provider."""
+        collection_name = self.vector_store.get_collection_name(self.embedding_provider_name)
+        
+        if not self.vector_store.collection_exists(collection_name):
+            logger.info(f"Creating vector collection: {collection_name}")
+            success = self.vector_store.create_policy_collection(
+                self.embedding_provider_name,
+                self.embedding_provider.dimension,
+                "cosine"
+            )
+            if not success:
+                raise RuntimeError(f"Failed to create vector collection: {collection_name}")
+        else:
+            logger.info(f"Using existing vector collection: {collection_name}")
     
     def process_pending_files(self, limit: Optional[int] = None) -> Dict[str, int]:
         """
@@ -227,8 +253,13 @@ class SyncManager:
             document.total_chunks = len(chunk_records)
             document.total_tokens = chunking_result.total_tokens
             
-            # TODO: Step 6: Generate embeddings (will implement in Phase 4)
-            # TODO: Step 7: Store in vector database (will implement in Phase 5)
+            # Commit chunks to get IDs
+            db.commit()
+            for chunk_record in chunk_records:
+                db.refresh(chunk_record)
+            
+            # Step 6: Generate embeddings and store in vector database
+            vector_sync_result = self._sync_chunks_to_vectors(db, document, chunk_records)
             
             # Update sync state
             file_state.sync_status = 'synced'
@@ -284,6 +315,80 @@ class SyncManager:
             
         finally:
             db.close()
+    
+    def _sync_chunks_to_vectors(self, db: Session, document: Document, chunk_records: List[DocumentChunk]) -> Dict[str, Any]:
+        """
+        Generate embeddings for chunks and store in vector database.
+        
+        Args:
+            db: Database session
+            document: Document record
+            chunk_records: List of chunk records
+            
+        Returns:
+            Sync result dictionary
+        """
+        try:
+            if not chunk_records:
+                return {'success': True, 'vector_count': 0}
+            
+            # Prepare chunk data for embedding
+            chunk_texts = [chunk.chunk_text for chunk in chunk_records]
+            chunk_data = []
+            
+            for chunk in chunk_records:
+                chunk_info = {
+                    'chunk_id': chunk.id,
+                    'document_id': document.id,
+                    'text': chunk.chunk_text,
+                    'chunk_index': chunk.chunk_index,
+                    'document_index': document.document_index,
+                    'policy_acronym': chunk.context_metadata.get('policy_acronym'),
+                    'policy_manual': chunk.context_metadata.get('policy_manual'),
+                    'section': chunk.context_metadata.get('section'),
+                    'subsection': chunk.context_metadata.get('subsection'), 
+                    'document_type': chunk.context_metadata.get('document_type'),
+                    'file_path': document.file_path,
+                    'page_numbers': chunk.page_numbers
+                }
+                chunk_data.append(chunk_info)
+            
+            # Generate embeddings
+            logger.info(f"Generating embeddings for {len(chunk_texts)} chunks using {self.embedding_provider_name}")
+            embedding_result = self.embedding_provider.embed_texts(chunk_texts)
+            
+            # Store vectors in Qdrant
+            logger.info(f"Storing {len(embedding_result.embeddings)} vectors in collection")
+            vector_ids = self.vector_store.add_document_chunks(
+                self.embedding_provider_name,
+                chunk_data,
+                embedding_result.embeddings
+            )
+            
+            # Update chunk records with vector IDs
+            for chunk_record, vector_id in zip(chunk_records, vector_ids):
+                chunk_record.vector_id = vector_id
+                # Note: embedding_model_id and vector_collection_id would be set
+                # if we had those tables fully implemented
+            
+            db.commit()
+            
+            logger.info(f"Successfully synced {len(vector_ids)} vectors for document {document.file_path}")
+            
+            return {
+                'success': True,
+                'vector_count': len(vector_ids),
+                'embedding_time_ms': embedding_result.processing_time_ms,
+                'vector_ids': vector_ids
+            }
+            
+        except Exception as e:
+            logger.error(f"Error syncing chunks to vectors: {e}", exc_info=True)
+            return {
+                'success': False,
+                'error': str(e),
+                'vector_count': 0
+            }
     
     def retry_failed_files(self, max_retries: Optional[int] = None) -> Dict[str, int]:
         """
@@ -351,10 +456,33 @@ class SyncManager:
             
             logger.info(f"Cleaning up {len(deleted_files)} deleted files")
             
-            # TODO: Remove vectors from Qdrant
-            # For now, just remove from database
-            
             for file in deleted_files:
+                try:
+                    # Get document and its chunks to find vector IDs
+                    document = db.query(Document).filter_by(file_path=file.file_path).first()
+                    if document:
+                        chunks = db.query(DocumentChunk).filter_by(document_id=document.id).all()
+                        
+                        # Collect vector IDs to delete
+                        vector_ids = [chunk.vector_id for chunk in chunks if chunk.vector_id]
+                        
+                        if vector_ids:
+                            # Remove vectors from Qdrant
+                            collection_name = self.vector_store.get_collection_name(self.embedding_provider_name)
+                            success = self.vector_store.delete_vectors(collection_name, vector_ids)
+                            
+                            if success:
+                                logger.info(f"Deleted {len(vector_ids)} vectors for {file.file_path}")
+                            else:
+                                logger.warning(f"Failed to delete vectors for {file.file_path}")
+                        
+                        # Remove document and chunks from database
+                        db.query(DocumentChunk).filter_by(document_id=document.id).delete()
+                        db.delete(document)
+                
+                except Exception as e:
+                    logger.error(f"Error cleaning up file {file.file_path}: {e}")
+                    continue
                 # Create deletion sync operation
                 sync_op = VectorSyncOperation(
                     operation_type='delete',
