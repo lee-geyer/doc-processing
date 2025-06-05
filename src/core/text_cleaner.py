@@ -345,3 +345,34 @@ class TextCleaner:
             'word_retention': word_retention,
             'char_retention': char_retention
         }
+    
+    def clean_text_fast(self, text: str) -> str:
+        """
+        Fast text cleaning for optimized processing.
+        Skips validation and frequency tracking for speed.
+        
+        Args:
+            text: Raw text to clean
+            
+        Returns:
+            Cleaned text
+        """
+        if not text:
+            return ""
+        
+        # Apply only essential cleaning patterns
+        cleaned = text
+        
+        # Remove only the most common disclaimers (combine patterns for efficiency)
+        essential_pattern = r'(\*This document is uncontrolled when printed\.\*|' \
+                          r'Helping people live better\.?|' \
+                          r'Page \d+ of \d+|' \
+                          r'Confidential and Proprietary Information.*?© \d{4})'
+        
+        cleaned = re.sub(essential_pattern, '', cleaned, flags=re.IGNORECASE | re.DOTALL)
+        
+        # Quick whitespace normalization
+        cleaned = re.sub(r'\n\s*\n\s*\n+', '\n\n', cleaned)
+        cleaned = re.sub(r'[ \t]+', ' ', cleaned)
+        
+        return cleaned.strip()

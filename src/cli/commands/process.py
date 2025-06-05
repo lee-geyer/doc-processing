@@ -412,3 +412,71 @@ def _display_validation_results(results):
         
         if len(invalid_files) > 10:
             console.print(f"  ... and {len(invalid_files) - 10} more")
+
+
+@app.command()
+def all(
+    batch_size: int = typer.Option(10, "--batch", "-b", help="Number of files per batch"),
+    max_retries: int = typer.Option(3, "--retries", "-r", help="Maximum retries for failures"),
+):
+    """Process ALL pending files until completion with monitoring."""
+    from src.cli.commands.process_all import process_all_files
+    
+    try:
+        process_all_files(batch_size=batch_size, max_retries=max_retries)
+    except Exception as e:
+        console.print(f"[red]Error during processing: {e}[/red]")
+        raise typer.Exit(1)
+
+
+@app.command()
+def turbo(
+    batch_size: int = typer.Option(50, "--batch", "-b", help="Number of files per batch"),
+):
+    """Process files with TURBO speed optimizations."""
+    from src.core.optimized_sync import OptimizedSyncManager
+    from src.models.database import SessionLocal, FileSyncState
+    
+    try:
+        console.print("[bold cyan]🚀 TURBO Processing Mode Activated![/bold cyan]")
+        console.print("Optimizations enabled:")
+        console.print("  ✓ Batch embedding generation")
+        console.print("  ✓ Parallel document parsing")
+        console.print("  ✓ Fast text cleaning")
+        console.print("  ✓ Optimized chunk sizes")
+        console.print("  ✓ Batch vector storage\n")
+        
+        sync_manager = OptimizedSyncManager()
+        
+        db = SessionLocal()
+        pending_count = db.query(FileSyncState).filter_by(sync_status='pending').count()
+        db.close()
+        
+        total_processed = 0
+        
+        with Progress(console=console) as progress:
+            task = progress.add_task("Processing files...", total=pending_count)
+            
+            while pending_count > 0:
+                result = sync_manager.process_files_optimized(limit=batch_size)
+                
+                total_processed += result['processed']
+                progress.update(task, advance=result['processed'])
+                
+                if result['processed'] == 0:
+                    break
+                
+                # Update pending count
+                db = SessionLocal()
+                pending_count = db.query(FileSyncState).filter_by(sync_status='pending').count()
+                db.close()
+                
+                # Show batch results
+                console.print(f"Batch complete: {result['succeeded']} succeeded, {result['failed']} failed")
+        
+        console.print(f"\n[bold green]✓ Turbo processing complete![/bold green]")
+        console.print(f"Total files processed: {total_processed}")
+        
+    except Exception as e:
+        console.print(f"[red]Error during turbo processing: {e}[/red]")
+        raise typer.Exit(1)

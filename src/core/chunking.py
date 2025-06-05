@@ -7,6 +7,7 @@ from pathlib import Path
 from src.config.settings import settings
 from src.utils.context_utils import DocumentContext
 from src.utils.logging import get_logger
+from src.core.form_descriptor import generate_form_description
 
 logger = get_logger(__name__)
 
@@ -213,7 +214,8 @@ class DocumentChunker:
         markdown: str,
         document_context: DocumentContext,
         chunk_size: Optional[int] = None,
-        chunk_overlap: Optional[int] = None
+        chunk_overlap: Optional[int] = None,
+        file_size_bytes: int = 0
     ) -> ChunkingResult:
         """Chunk document with intelligent boundary detection."""
         start_time = time.time()
@@ -225,16 +227,26 @@ class DocumentChunker:
         logger.info(f"Chunking document: {document_context.file_name} "
                    f"(size: {chunk_size}, overlap: {chunk_overlap})")
         
-        # Find all potential boundaries
-        boundaries = self.boundary_detector.find_boundaries(text, markdown)
+        # Check if document has extractable content
+        text_stripped = text.strip() if text else ""
         
-        # Generate chunks using boundary-aware strategy
-        chunks = self._create_chunks_with_boundaries(
-            text, markdown, boundaries, chunk_size, chunk_overlap, document_context
-        )
+        if not text_stripped or len(text_stripped) < 10:
+            # Generate synthetic description for forms/templates with no content
+            logger.info(f"No extractable content found, generating synthetic description for: {document_context.file_name}")
+            chunks = self._create_synthetic_chunk(document_context, file_size_bytes)
+            chunking_strategy = "synthetic_description"
+        else:
+            # Find all potential boundaries
+            boundaries = self.boundary_detector.find_boundaries(text, markdown)
+            
+            # Generate chunks using boundary-aware strategy
+            chunks = self._create_chunks_with_boundaries(
+                text, markdown, boundaries, chunk_size, chunk_overlap, document_context
+            )
+            chunking_strategy = "boundary_aware_token_based"
         
         # Add metadata to all chunks
-        self._enrich_chunks_with_metadata(chunks, document_context, text)
+        self._enrich_chunks_with_metadata(chunks, document_context, text_stripped or "")
         
         # Calculate statistics
         processing_time = int((time.time() - start_time) * 1000)
@@ -245,15 +257,46 @@ class DocumentChunker:
             total_tokens=sum(chunk.token_count for chunk in chunks),
             avg_chunk_size=sum(chunk.token_count for chunk in chunks) / len(chunks) if chunks else 0,
             overlap_ratio=chunk_overlap / chunk_size if chunk_size > 0 else 0,
-            boundary_preservation_rate=self._calculate_boundary_preservation_rate(chunks, boundaries),
+            boundary_preservation_rate=self._calculate_boundary_preservation_rate(chunks, boundaries if 'boundaries' in locals() else []),
             processing_time_ms=processing_time,
-            chunking_strategy="boundary_aware_token_based"
+            chunking_strategy=chunking_strategy
         )
         
         logger.info(f"Chunked into {result.total_chunks} chunks "
                    f"(avg size: {result.avg_chunk_size:.1f} tokens)")
         
         return result
+    
+    def _create_synthetic_chunk(self, document_context: DocumentContext, file_size_bytes: int) -> List[DocumentChunk]:
+        """
+        Create a synthetic chunk for forms/templates with no extractable content.
+        
+        Args:
+            document_context: Document context information
+            file_size_bytes: File size for confidence calculation
+            
+        Returns:
+            List containing single synthetic chunk
+        """
+        # Generate synthetic description
+        synthetic_text, synthetic_metadata = generate_form_description(document_context, file_size_bytes)
+        
+        # Create single chunk with synthetic content
+        chunk = DocumentChunk(
+            index=0,
+            text=synthetic_text,
+            markdown=f"# {document_context.file_name}\n\n{synthetic_text}",  # Simple markdown wrapper
+            token_count=self.token_counter.count_tokens(synthetic_text),
+            char_start=0,
+            char_end=len(synthetic_text),
+            hash=self._generate_chunk_hash(synthetic_text),
+            document_position=0.0  # Single chunk = start of document
+        )
+        
+        # Add synthetic metadata to context metadata
+        chunk.context_metadata.update(synthetic_metadata)
+        
+        return [chunk]
     
     def _create_chunks_with_boundaries(
         self,
@@ -388,8 +431,8 @@ class DocumentChunker:
                 structural_elements.append("heading")
             chunk.structural_elements = structural_elements
             
-            # Build context metadata
-            chunk.context_metadata = {
+            # Build context metadata (preserve existing metadata from synthetic chunks)
+            base_metadata = {
                 "file_path": document_context.file_path,
                 "file_name": document_context.file_name,
                 "policy_manual": document_context.policy_manual,
@@ -404,6 +447,15 @@ class DocumentChunker:
                 "structural_elements": chunk.structural_elements,
                 "token_count": chunk.token_count
             }
+            
+            # Merge with existing metadata (preserving synthetic metadata)
+            if chunk.context_metadata:
+                # Existing metadata takes precedence (for synthetic chunks)
+                merged_metadata = base_metadata.copy()
+                merged_metadata.update(chunk.context_metadata)
+                chunk.context_metadata = merged_metadata
+            else:
+                chunk.context_metadata = base_metadata
             
             # Add surrounding context if enabled
             if settings.include_surrounding_context:

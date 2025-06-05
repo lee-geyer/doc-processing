@@ -545,7 +545,13 @@ class PolicyVectorStore(VectorStore):
                 
                 # Additional metadata
                 "created_at": datetime.utcnow().isoformat(),
-                "embedding_model": provider_name
+                "embedding_model": provider_name,
+                
+                # Synthetic description metadata
+                "synthetic_description": chunk.get("synthetic_description", False),
+                "confidence_score": chunk.get("confidence_score"),
+                "generated_keywords": chunk.get("generated_keywords", []),
+                "use_cases": chunk.get("use_cases", [])
             }
             payloads.append(payload)
         

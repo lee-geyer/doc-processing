@@ -7,8 +7,8 @@ This system monitors mirrored files from the doc-sync system, parses documents u
 ## Production Status (June 2025)
 
 **SYSTEM OPERATIONAL**
-- **847 policy documents** successfully processed (99.4% success rate)
-- **720,955 vector embeddings** stored and searchable
+- **777 policy documents** with extractable content processed (90.8% success rate)
+- **720,953 vector embeddings** stored and searchable
 - **36-minute processing** of full document corpus
 - **Real-time semantic search** with policy-aware routing
 
@@ -16,7 +16,7 @@ This system monitors mirrored files from the doc-sync system, parses documents u
 - Search precision: 0.828 similarity for domain-specific queries
 - Response time: ~15ms across 720K+ vectors  
 - Policy coverage: IPC, CARE, EPM, MAINT, EVS, PRV, LEG, ADM, RC
-- Error rate: <1% (5 complex PDF parsing failures only)
+- Content extraction: 90.8% (75 documents are forms/templates with no extractable text)
 
 ## System Overview
 

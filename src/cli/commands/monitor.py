@@ -114,3 +114,31 @@ def status():
     except Exception as e:
         console.print(f"[red]Error getting monitor status: {e}[/red]")
         raise typer.Exit(1)
+
+
+@app.command()
+def progress(
+    refresh: int = typer.Option(5, "--refresh", "-r", help="Refresh interval in seconds"),
+):
+    """Monitor document processing progress in real-time."""
+    from src.cli.commands.monitor_progress import monitor_progress
+    
+    try:
+        console.print("[cyan]Starting progress monitoring...[/cyan]")
+        console.print("[dim]Press Ctrl+C to stop[/dim]\n")
+        monitor_progress(refresh_interval=refresh)
+    except Exception as e:
+        console.print(f"\n[red]Error monitoring progress: {e}[/red]")
+        raise typer.Exit(1)
+
+
+@app.command()
+def report():
+    """Generate detailed processing report."""
+    from src.cli.commands.monitor_progress import print_detailed_report
+    
+    try:
+        print_detailed_report()
+    except Exception as e:
+        console.print(f"[red]Error generating report: {e}[/red]")
+        raise typer.Exit(1)

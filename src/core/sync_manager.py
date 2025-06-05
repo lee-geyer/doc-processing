@@ -218,7 +218,8 @@ class SyncManager:
             chunking_result = self.document_chunker.chunk_document(
                 text=cleaning_result['cleaned_text'],
                 markdown=parsed_doc.markdown_content or "",
-                document_context=context
+                document_context=context,
+                file_size_bytes=file_state.file_size_bytes
             )
             
             # Remove existing chunks if updating
@@ -349,7 +350,12 @@ class SyncManager:
                     'subsection': chunk.context_metadata.get('subsection'), 
                     'document_type': chunk.context_metadata.get('document_type'),
                     'file_path': document.file_path,
-                    'page_numbers': chunk.page_numbers
+                    'page_numbers': chunk.page_numbers,
+                    # Synthetic description metadata
+                    'synthetic_description': chunk.context_metadata.get('synthetic_description', False),
+                    'confidence_score': chunk.context_metadata.get('confidence_score'),
+                    'generated_keywords': chunk.context_metadata.get('generated_keywords', []),
+                    'use_cases': chunk.context_metadata.get('use_cases', [])
                 }
                 chunk_data.append(chunk_info)
             
