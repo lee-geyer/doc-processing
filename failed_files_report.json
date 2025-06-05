@@ -1,0 +1,204 @@
+{
+  "total_failed": 27,
+  "success_rate": 96.8494749124854,
+  "error_summary": {
+    "Corrupted Word Document": 2,
+    "PDF Table Extraction Error": 22,
+    "PDF Memory Error": 3
+  },
+  "file_type_breakdown": {
+    "doc": 2,
+    "pdf": 25
+  },
+  "failed_files": [
+    {
+      "filename": "IPC3-P10-E4 - UTI Fact Sheet.doc",
+      "full_path": "/Users/leegeyer/Library/CloudStorage/OneDrive-Extendicare(Canada)Inc/INTEGRATION FILES TARGETED/Infection Prevention and Control/Section 3- Communicable Diseases/IPC3-P10-E4 - UTI Fact Sheet.doc",
+      "error_type": "Corrupted Word Document",
+      "attempts": 2,
+      "error_message": "Document parsing failed: Failed to parse DOCX file: file '/Users/leegeyer/Library/CloudStorage/OneDrive-Extendicare(Canada)Inc/INTEGRATION FILES TARGETED/Infection Prevention and Control/Section 3- Communicable Diseases/IPC3-P10-E4 - UTI Fact Sheet.doc' is not a Word file, content type is 'application/vnd.openxmlformats-officedocument.themeManager+xml'"
+    },
+    {
+      "filename": "IPC2-P10-T4- Hair Care Equipment-Disinfectant Log.doc",
+      "full_path": "/Users/leegeyer/Library/CloudStorage/OneDrive-Extendicare(Canada)Inc/INTEGRATION FILES TARGETED/Infection Prevention and Control/Section 2- Infection Prevention/IPC2-P10-T4- Hair Care Equipment-Disinfectant Log.doc",
+      "error_type": "Corrupted Word Document",
+      "attempts": 2,
+      "error_message": "Document parsing failed: Failed to parse DOCX file: file '/Users/leegeyer/Library/CloudStorage/OneDrive-Extendicare(Canada)Inc/INTEGRATION FILES TARGETED/Infection Prevention and Control/Section 2- Infection Prevention/IPC2-P10-T4- Hair Care Equipment-Disinfectant Log.doc' is not a Word file, content type is 'application/vnd.openxmlformats-officedocument.themeManager+xml'"
+    },
+    {
+      "filename": "MAINT3-O10.01-T1 Daily Log.pdf",
+      "full_path": "/Users/leegeyer/Library/CloudStorage/OneDrive-Extendicare(Canada)Inc/INTEGRATION FILES TARGETED/Maintenance/Section 3- Maintenance Program Documentation/MAINT3-O10.01-T1 Daily Log.pdf",
+      "error_type": "PDF Table Extraction Error",
+      "attempts": 1,
+      "error_message": "Document parsing failed: not a textpage of this page"
+    },
+    {
+      "filename": "CARE1-P10.01-T7 Plan of Care - Move-in Assessment.pdf",
+      "full_path": "/Users/leegeyer/Library/CloudStorage/OneDrive-Extendicare(Canada)Inc/INTEGRATION FILES TARGETED/Care/Section 1- Move-In and Transitions of Care/CARE1-P10.01-T7 Plan of Care - Move-in Assessment.pdf",
+      "error_type": "PDF Table Extraction Error",
+      "attempts": 1,
+      "error_message": "Document parsing failed: not a textpage of this page"
+    },
+    {
+      "filename": "CARE10-P10.02 Lifts and Transfer Devices Procedure.pdf",
+      "full_path": "/Users/leegeyer/Library/CloudStorage/OneDrive-Extendicare(Canada)Inc/INTEGRATION FILES TARGETED/Care/Section 10- Safe Resident Handling/CARE10-P10.02 Lifts and Transfer Devices Procedure.pdf",
+      "error_type": "PDF Table Extraction Error",
+      "attempts": 1,
+      "error_message": "Document parsing failed: not a textpage of this page"
+    },
+    {
+      "filename": "CARE17-P10.05 Dysphagia Management and Safe Eating.pdf",
+      "full_path": "/Users/leegeyer/Library/CloudStorage/OneDrive-Extendicare(Canada)Inc/INTEGRATION FILES TARGETED/Care/Section 17- Nutritional Care and Hydration/CARE17-P10.05 Dysphagia Management and Safe Eating.pdf",
+      "error_type": "PDF Table Extraction Error",
+      "attempts": 1,
+      "error_message": "Document parsing failed: not a textpage of this page"
+    },
+    {
+      "filename": "IPC2-P10-E38 - How to Handrub Signage (3 per page).pdf",
+      "full_path": "/Users/leegeyer/Library/CloudStorage/OneDrive-Extendicare(Canada)Inc/INTEGRATION FILES TARGETED/Infection Prevention and Control/Section 2- Infection Prevention/IPC2-P10-E38 - How to Handrub Signage (3 per page).pdf",
+      "error_type": "PDF Table Extraction Error",
+      "attempts": 1,
+      "error_message": "Document parsing failed: not a textpage of this page"
+    },
+    {
+      "filename": "MAINT5-O10.07 Semi-Annual Ventilation Inspection.pdf",
+      "full_path": "/Users/leegeyer/Library/CloudStorage/OneDrive-Extendicare(Canada)Inc/INTEGRATION FILES TARGETED/Maintenance/Section 5- Certified Inspections/MAINT5-O10.07 Semi-Annual Ventilation Inspection.pdf",
+      "error_type": "PDF Table Extraction Error",
+      "attempts": 1,
+      "error_message": "Document parsing failed: not a textpage of this page"
+    },
+    {
+      "filename": "MAINT5-O10.01 Specifications for Contract Work.pdf",
+      "full_path": "/Users/leegeyer/Library/CloudStorage/OneDrive-Extendicare(Canada)Inc/INTEGRATION FILES TARGETED/Maintenance/Section 5- Certified Inspections/MAINT5-O10.01 Specifications for Contract Work.pdf",
+      "error_type": "PDF Table Extraction Error",
+      "attempts": 1,
+      "error_message": "Document parsing failed: not a textpage of this page"
+    },
+    {
+      "filename": "CARE11-P10 Restraint & PASD Use Policy.pdf",
+      "full_path": "/Users/leegeyer/Library/CloudStorage/OneDrive-Extendicare(Canada)Inc/INTEGRATION FILES TARGETED/Care/Section 11- Restraints and PASD/CARE11-P10 Restraint & PASD Use Policy.pdf",
+      "error_type": "PDF Table Extraction Error",
+      "attempts": 1,
+      "error_message": "Document parsing failed: not a textpage of this page"
+    },
+    {
+      "filename": "CARE12-P10.01-T2 Pain - 72hr Strategy Evaluation.pdf",
+      "full_path": "/Users/leegeyer/Library/CloudStorage/OneDrive-Extendicare(Canada)Inc/INTEGRATION FILES TARGETED/Care/Section 12- Pain Management/CARE12-P10.01-T2 Pain - 72hr Strategy Evaluation.pdf",
+      "error_type": "PDF Table Extraction Error",
+      "attempts": 1,
+      "error_message": "Document parsing failed: not a textpage of this page"
+    },
+    {
+      "filename": "CARE17-P10.06-E1 Guidelines Ther Diets Text Liq Modific.pdf",
+      "full_path": "/Users/leegeyer/Library/CloudStorage/OneDrive-Extendicare(Canada)Inc/INTEGRATION FILES TARGETED/Care/Section 17- Nutritional Care and Hydration/CARE17-P10.06-E1 Guidelines Ther Diets Text Liq Modific.pdf",
+      "error_type": "PDF Table Extraction Error",
+      "attempts": 1,
+      "error_message": "Document parsing failed: not a textpage of this page"
+    },
+    {
+      "filename": "RC-16-01-15 - Self-Administration of Medication.pdf",
+      "full_path": "/Users/leegeyer/Library/CloudStorage/OneDrive-Extendicare(Canada)Inc/INTEGRATION FILES TARGETED/Care/Section 13- Medication Management/RC-16-01-15 - Self-Administration of Medication.pdf",
+      "error_type": "PDF Table Extraction Error",
+      "attempts": 1,
+      "error_message": "Document parsing failed: not a textpage of this page"
+    },
+    {
+      "filename": "CARE19-P20.01 Immediate Response and Mandatory Reporting of Abuse and Neglect (2).pdf",
+      "full_path": "/Users/leegeyer/Library/CloudStorage/OneDrive-Extendicare(Canada)Inc/INTEGRATION FILES TARGETED/Care/Section 19- Incident Management Abuse and Resident Incident/CARE19-P20.01 Immediate Response and Mandatory Reporting of Abuse and Neglect (2).pdf",
+      "error_type": "PDF Table Extraction Error",
+      "attempts": 1,
+      "error_message": "Document parsing failed: not a textpage of this page"
+    },
+    {
+      "filename": "CARE10-P10.01 Safe Resident Handling Procedure.pdf",
+      "full_path": "/Users/leegeyer/Library/CloudStorage/OneDrive-Extendicare(Canada)Inc/INTEGRATION FILES TARGETED/Care/Section 10- Safe Resident Handling/CARE10-P10.01 Safe Resident Handling Procedure.pdf",
+      "error_type": "PDF Table Extraction Error",
+      "attempts": 1,
+      "error_message": "Document parsing failed: not a textpage of this page"
+    },
+    {
+      "filename": "EPM2-P10.04-T5 Code Black Poster.pdf",
+      "full_path": "/Users/leegeyer/Library/CloudStorage/OneDrive-Extendicare(Canada)Inc/INTEGRATION FILES TARGETED/Emergency Planning and Management/SECTION 2 Emergency Response Codes/EPM2-P10.04-T5 Code Black Poster.pdf",
+      "error_type": "PDF Table Extraction Error",
+      "attempts": 1,
+      "error_message": "Document parsing failed: not a textpage of this page"
+    },
+    {
+      "filename": "CARE19-P10.04 - Disclosure of Resident Safety Incidents.pdf",
+      "full_path": "/Users/leegeyer/Library/CloudStorage/OneDrive-Extendicare(Canada)Inc/INTEGRATION FILES TARGETED/Care/Section 19- Incident Management Abuse and Resident Incident/CARE19-P10.04 - Disclosure of Resident Safety Incidents.pdf",
+      "error_type": "PDF Table Extraction Error",
+      "attempts": 1,
+      "error_message": "Document parsing failed: not a textpage of this page"
+    },
+    {
+      "filename": "CARE1-P10.04 Leave of Absence.pdf",
+      "full_path": "/Users/leegeyer/Library/CloudStorage/OneDrive-Extendicare(Canada)Inc/INTEGRATION FILES TARGETED/Care/Section 1- Move-In and Transitions of Care/CARE1-P10.04 Leave of Absence.pdf",
+      "error_type": "PDF Table Extraction Error",
+      "attempts": 1,
+      "error_message": "Document parsing failed: not a textpage of this page"
+    },
+    {
+      "filename": "MAINT1-O10.02-T5D Air Handling Unit Insp .pdf",
+      "full_path": "/Users/leegeyer/Library/CloudStorage/OneDrive-Extendicare(Canada)Inc/INTEGRATION FILES TARGETED/Maintenance/Section 1- Preventative Maintenance Program/MAINT1-O10.02-T5D Air Handling Unit Insp .pdf",
+      "error_type": "PDF Table Extraction Error",
+      "attempts": 1,
+      "error_message": "Document parsing failed: not a textpage of this page"
+    },
+    {
+      "filename": "MAINT1-O10.02-T6J Hot Water Stor Tank Con Lined.pdf",
+      "full_path": "/Users/leegeyer/Library/CloudStorage/OneDrive-Extendicare(Canada)Inc/INTEGRATION FILES TARGETED/Maintenance/Section 1- Preventative Maintenance Program/MAINT1-O10.02-T6J Hot Water Stor Tank Con Lined.pdf",
+      "error_type": "PDF Table Extraction Error",
+      "attempts": 1,
+      "error_message": "Document parsing failed: not a textpage of this page"
+    },
+    {
+      "filename": "MAINT1-O10.02-T7J Ice Machines Inspection Checklist.pdf",
+      "full_path": "/Users/leegeyer/Library/CloudStorage/OneDrive-Extendicare(Canada)Inc/INTEGRATION FILES TARGETED/Maintenance/Section 1- Preventative Maintenance Program/MAINT1-O10.02-T7J Ice Machines Inspection Checklist.pdf",
+      "error_type": "PDF Table Extraction Error",
+      "attempts": 1,
+      "error_message": "Document parsing failed: not a textpage of this page"
+    },
+    {
+      "filename": "MAINT1-O10.02-T7C Dishwasher Booster Electric Insp.pdf",
+      "full_path": "/Users/leegeyer/Library/CloudStorage/OneDrive-Extendicare(Canada)Inc/INTEGRATION FILES TARGETED/Maintenance/Section 1- Preventative Maintenance Program/MAINT1-O10.02-T7C Dishwasher Booster Electric Insp.pdf",
+      "error_type": "PDF Table Extraction Error",
+      "attempts": 1,
+      "error_message": "Document parsing failed: not a textpage of this page"
+    },
+    {
+      "filename": "CARE12-P10 Pain Management Policy.pdf",
+      "full_path": "/Users/leegeyer/Library/CloudStorage/OneDrive-Extendicare(Canada)Inc/INTEGRATION FILES TARGETED/Care/Section 12- Pain Management/CARE12-P10 Pain Management Policy.pdf",
+      "error_type": "PDF Table Extraction Error",
+      "attempts": 1,
+      "error_message": "Document parsing failed: not a textpage of this page"
+    },
+    {
+      "filename": "CARE8-P10.03-E1 Frequently Asked Questions MAID.pdf",
+      "full_path": "/Users/leegeyer/Library/CloudStorage/OneDrive-Extendicare(Canada)Inc/INTEGRATION FILES TARGETED/Care/Section 8- Palliative and End of Life Care/CARE8-P10.03-E1 Frequently Asked Questions MAID.pdf",
+      "error_type": "PDF Table Extraction Error",
+      "attempts": 1,
+      "error_message": "Document parsing failed: not a textpage of this page"
+    },
+    {
+      "filename": "Symptoms_french_2025.pdf",
+      "full_path": "/Users/leegeyer/Library/CloudStorage/OneDrive-Extendicare(Canada)Inc/INTEGRATION FILES TARGETED/Infection Prevention and Control/Additional Resources/Symptoms_french_2025.pdf",
+      "error_type": "PDF Memory Error",
+      "attempts": 1,
+      "error_message": "Document parsing failed: weakly-referenced object no longer exists"
+    },
+    {
+      "filename": "CARE11-P10-E4 Restraint Information for Residents & Family.pdf",
+      "full_path": "/Users/leegeyer/Library/CloudStorage/OneDrive-Extendicare(Canada)Inc/INTEGRATION FILES TARGETED/Care/Section 11- Restraints and PASD/CARE11-P10-E4 Restraint Information for Residents & Family.pdf",
+      "error_type": "PDF Memory Error",
+      "attempts": 1,
+      "error_message": "Document parsing failed: weakly-referenced object no longer exists"
+    },
+    {
+      "filename": "CARE8-P10.04-T5 User Guide Resident Death Notice Form (Ontario).DOC.pdf",
+      "full_path": "/Users/leegeyer/Library/CloudStorage/OneDrive-Extendicare(Canada)Inc/INTEGRATION FILES TARGETED/Care/Section 8- Palliative and End of Life Care/CARE8-P10.04-T5 User Guide Resident Death Notice Form (Ontario).DOC.pdf",
+      "error_type": "PDF Memory Error",
+      "attempts": 1,
+      "error_message": "Document parsing failed: weakly-referenced object no longer exists"
+    }
+  ]
+}
