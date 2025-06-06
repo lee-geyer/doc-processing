@@ -64,32 +64,45 @@ class ChunkingResult:
 
 
 class TokenCounter:
-    """Simple token counter for chunking."""
+    """Accurate token counter using actual tokenizer."""
+    
+    def __init__(self):
+        # Use the same tokenizer as the embedding model
+        from sentence_transformers import SentenceTransformer
+        self.model = SentenceTransformer('multi-qa-mpnet-base-dot-v1')
+        self.tokenizer = self.model.tokenizer
+        self.max_seq_length = self.model.max_seq_length  # 512 for this model
     
     def count_tokens(self, text: str) -> int:
-        """Count tokens using simple whitespace splitting."""
-        # This is a simple approximation. For production, consider using
-        # tiktoken or similar for more accurate token counting
-        return len(text.split())
+        """Count actual tokens using the model's tokenizer."""
+        tokens = self.tokenizer.tokenize(text)
+        return len(tokens)
+    
+    def get_token_ids(self, text: str) -> List[int]:
+        """Get actual token IDs for text."""
+        return self.tokenizer.encode(text, add_special_tokens=False)
     
     def split_by_tokens(self, text: str, max_tokens: int) -> List[str]:
-        """Split text into segments of approximately max_tokens."""
-        words = text.split()
+        """Split text into segments of exactly max_tokens using actual tokenization."""
+        # Tokenize the entire text
+        tokens = self.tokenizer.tokenize(text)
+        
+        if len(tokens) <= max_tokens:
+            return [text]
+        
         segments = []
-        current_segment = []
-        current_count = 0
+        current_start = 0
         
-        for word in words:
-            if current_count + 1 > max_tokens and current_segment:
-                segments.append(' '.join(current_segment))
-                current_segment = [word]
-                current_count = 1
-            else:
-                current_segment.append(word)
-                current_count += 1
-        
-        if current_segment:
-            segments.append(' '.join(current_segment))
+        while current_start < len(tokens):
+            # Take max_tokens from current position
+            current_tokens = tokens[current_start:current_start + max_tokens]
+            
+            # Convert tokens back to text
+            # Use the tokenizer's convert_tokens_to_string method
+            segment_text = self.tokenizer.convert_tokens_to_string(current_tokens)
+            segments.append(segment_text.strip())
+            
+            current_start += max_tokens
         
         return segments
 
@@ -314,11 +327,13 @@ class DocumentChunker:
         
         while current_pos < len(text):
             # Find the best end position for this chunk
-            target_end = current_pos + chunk_size * 6  # Rough char estimate
+            # Use 4 chars per token (more conservative estimate)
+            target_end = current_pos + chunk_size * 4
             
             # Find the best boundary near target position
+            search_window = chunk_size * 2  # Reasonable search window
             best_boundary = self._find_best_boundary_near_position(
-                boundaries, target_end, chunk_size * 6 // 4  # Search window
+                boundaries, target_end, search_window
             )
             
             if best_boundary:
@@ -332,37 +347,64 @@ class DocumentChunker:
                 else:
                     chunk_end = len(text)
             
-            # Ensure minimum chunk size
-            if chunk_end - current_pos < settings.min_chunk_size * 4:  # Rough char estimate
-                chunk_end = min(current_pos + settings.min_chunk_size * 4, len(text))
+            # Ensure minimum chunk size (use conservative char estimate)
+            min_chunk_chars = settings.min_chunk_size * 4
+            if chunk_end - current_pos < min_chunk_chars:
+                chunk_end = min(current_pos + min_chunk_chars, len(text))
             
             # Create chunk
             chunk_text = text[current_pos:chunk_end].strip()
-            chunk_markdown = self._extract_corresponding_markdown(
-                markdown, text, current_pos, chunk_end
-            )
+            # For now, use the same text for markdown until proper mapping is implemented
+            chunk_markdown = chunk_text
             
             if chunk_text:  # Only add non-empty chunks
-                chunk = DocumentChunk(
-                    index=chunk_index,
-                    text=chunk_text,
-                    markdown=chunk_markdown,
-                    token_count=self.token_counter.count_tokens(chunk_text),
-                    char_start=current_pos,
-                    char_end=chunk_end,
-                    hash=self._generate_chunk_hash(chunk_text),
-                    document_position=current_pos / len(text) if len(text) > 0 else 0.0
-                )
+                # Count actual tokens
+                actual_token_count = self.token_counter.count_tokens(chunk_text)
                 
-                chunks.append(chunk)
-                chunk_index += 1
+                # Safety check: ensure chunk doesn't exceed model limit
+                if actual_token_count > self.token_counter.max_seq_length:
+                    logger.warning(f"Chunk exceeds model limit ({actual_token_count} > {self.token_counter.max_seq_length}), splitting further")
+                    # Split using actual tokenization
+                    sub_chunks = self.token_counter.split_by_tokens(chunk_text, chunk_size)
+                    for sub_chunk in sub_chunks:
+                        if sub_chunk.strip():
+                            chunk = DocumentChunk(
+                                index=chunk_index,
+                                text=sub_chunk,
+                                markdown=sub_chunk,  # Same as text for now
+                                token_count=self.token_counter.count_tokens(sub_chunk),
+                                char_start=current_pos,
+                                char_end=chunk_end,
+                                hash=self._generate_chunk_hash(sub_chunk),
+                                document_position=current_pos / len(text) if len(text) > 0 else 0.0
+                            )
+                            chunks.append(chunk)
+                            chunk_index += 1
+                else:
+                    chunk = DocumentChunk(
+                        index=chunk_index,
+                        text=chunk_text,
+                        markdown=chunk_markdown,
+                        token_count=actual_token_count,
+                        char_start=current_pos,
+                        char_end=chunk_end,
+                        hash=self._generate_chunk_hash(chunk_text),
+                        document_position=current_pos / len(text) if len(text) > 0 else 0.0
+                    )
+                    
+                    chunks.append(chunk)
+                    chunk_index += 1
             
             # Calculate next position with overlap
-            overlap_chars = chunk_overlap * 6  # Rough char estimate
-            current_pos = max(chunk_end - overlap_chars, current_pos + 1)
+            overlap_chars = chunk_overlap * 4  # Conservative char estimate
+            next_pos = chunk_end - overlap_chars
             
-            # Break if we're not making progress
-            if current_pos >= chunk_end:
+            # Ensure we make meaningful progress (minimum 100 chars)
+            min_advance = max(100, chunk_size * 2)  # Minimum meaningful advance
+            current_pos = max(next_pos, current_pos + min_advance)
+            
+            # Break if we're not making meaningful progress or near end
+            if current_pos >= len(text) - min_advance:
                 break
         
         return chunks

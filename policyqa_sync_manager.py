@@ -164,7 +164,7 @@ class PolicyQASyncManager:
             
             # Clean text
             try:
-                cleaning_result = self.text_cleaner.clean_text(parsed_doc.raw_text or "", document_id=str(file_state.id))
+                cleaning_result = self.text_cleaner.clean_text(parsed_doc.raw_text or "")
                 cleaned_text = cleaning_result['cleaned_text']
             except Exception as e:
                 return self._handle_error(db, file_state, f"Text cleaning failed: {e}")
@@ -341,7 +341,7 @@ class PolicyQASyncManager:
             
             chunk_records.append(chunk_record)
             
-            # Prepare vector point for Qdrant
+            # Prepare vector point for Qdrant (with full content for visualization)
             vector_points.append({
                 'id': str(chunk_record.vector_id),
                 'vector': embedding,
@@ -352,7 +352,12 @@ class PolicyQASyncManager:
                     'document_index': document.document_index,
                     'section_title': chunk_record.section_title,
                     'context_metadata': chunk.context_metadata,
-                    'page_numbers': chunk_record.page_numbers or []
+                    'page_numbers': chunk_record.page_numbers or [],
+                    # Include actual content for visualization
+                    'chunk_text': chunk.text,
+                    'chunk_markdown': chunk.markdown,
+                    'token_count': chunk.token_count,
+                    'document_position': chunk.document_position
                 }
             })
         

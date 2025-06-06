@@ -53,9 +53,13 @@ def get_stats():
 def get_vector_count():
     """Get current vector count from Qdrant."""
     try:
-        collection_name = policy_vector_store.get_collection_name('sentence_transformers')
-        count = policy_vector_store.count_vectors(collection_name)
-        return count
+        # Use the policyQA collection
+        collection_name = "policyQA_dense_qa768"
+        import requests
+        response = requests.get(f'http://localhost:6333/collections/{collection_name}')
+        if response.status_code == 200:
+            return response.json()['result']['points_count']
+        return 0
     except:
         return 0
 
@@ -152,8 +156,9 @@ def main():
     console.print("[dim]Press Ctrl+C to stop[/dim]\n")
     
     try:
-        with Live(get_or_make_renderable=create_display, refresh_per_second=0.5) as live:
+        with Live(create_display(), refresh_per_second=0.5) as live:
             while True:
+                live.update(create_display())
                 time.sleep(2)
     except KeyboardInterrupt:
         console.print("\n[yellow]Monitor stopped[/yellow]")

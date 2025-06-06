@@ -101,8 +101,9 @@ class TextCleaner:
     def _get_disclaimer_patterns(self) -> List[str]:
         """Get regex patterns for known disclaimer text."""
         return [
-            # Main Extendicare disclaimer
+            # Main Extendicare disclaimer (with and without asterisks)
             r'\*This document is uncontrolled when printed\.\*',
+            r'This document is uncontrolled when printed\.?',
             
             # Accessibility disclaimer
             r'\*Extendicare \(Canada\) Inc\. will provide, on request, information in an accessible format or\*',

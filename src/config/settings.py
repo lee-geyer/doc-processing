@@ -58,14 +58,14 @@ class Settings(BaseSettings):
         description="Maximum number of files to process concurrently"
     )
     
-    # Chunking Configuration
+    # Chunking Configuration (Optimized for sentence transformers 512 token limit)
     chunk_size: int = Field(
-        default=1000,
-        description="Default chunk size in tokens"
+        default=400,
+        description="Default chunk size in tokens (conservative limit for 512 token model)"
     )
     chunk_overlap: int = Field(
-        default=200,
-        description="Default chunk overlap in tokens"
+        default=60,
+        description="Default chunk overlap in tokens (reduced redundancy)"
     )
     min_chunk_size: int = Field(
         default=100,
